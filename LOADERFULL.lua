@@ -8,7 +8,7 @@ error = function()
     return  
 end
 
-local baseUrl = "https://raw.githubusercontent.com/gustavolunas/scriptsTibia/refs/heads/main/"
+local baseUrl = "https://raw.githubusercontent.com/Drakksz/OTCNEW/refs/heads/main/"
 
 local macros = {
   "MAIN",
@@ -30,6 +30,7 @@ local macros = {
 
   "14.INGAME",
   "9.TRAVEL",
+  "10.01.FOLLOW",
   "10.FOLLOW",
   "11.PARTY",
   "12.PREY",
