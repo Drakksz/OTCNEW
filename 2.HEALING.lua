@@ -200,7 +200,7 @@ BotHealingPotMP < Panel
 
 UIWindow
   id: mainPanel
-  size: 400 390
+  size: 400 420
   border: 1 black
   anchors.centerIn: parent
   margin-top: -60
@@ -433,7 +433,7 @@ UIWindow
     margin-top: 25
     margin-right: 8
     margin-left: 8
-    height: 55
+    height: 80
     image-color: #363636
     layout: verticalBox
 
@@ -472,7 +472,7 @@ UIWindow
     anchors.top: labelFood.bottom
     anchors.left: panelFood.left
     anchors.right: panelFood.right
-    size: 270 35
+    size: 270 74
     margin-top: 5
     margin-left: 5
     margin-right: 5
@@ -540,43 +540,77 @@ foodContainer:setOpacity(0.70)
 foodContainer:setImageColor("#363636")
 foodContainer:setItems(settings.food.items)
 
-macro(500, function()
-  -- segurança básica
+local function getFoodIds()
+  local result = {}
+  local added = {}
+
+  if type(storage.foodItems) ~= "table" then
+    return result
+  end
+
+  for _, entry in ipairs(storage.foodItems) do
+    local id = 0
+
+    if type(entry) == "number" then
+      id = entry
+    elseif type(entry) == "string" then
+      id = tonumber(entry) or 0
+    elseif type(entry) == "table" then
+      if entry.id then
+        id = tonumber(entry.id) or 0
+      elseif entry.itemId then
+        id = tonumber(entry.itemId) or 0
+      elseif entry.getId and type(entry.getId) == "function" then
+        id = tonumber(entry:getId()) or 0
+      end
+    end
+
+    if id > 0 and not added[id] then
+      added[id] = true
+      table.insert(result, id)
+    end
+  end
+
+  return result
+end
+
+local lastAutoFoodTry = 0
+
+macro(1000, function()
   if not player then return end
 
-  -- condição 1: auto food ONLINE
   if not storage.lnsHealingPanel
      or not storage.lnsHealingPanel.toggles
      or storage.lnsHealingPanel.toggles.offFood ~= true then
     return
   end
 
-  -- condição 2: healingButton enabled
   if not storage[switchHealing]
      or storage[switchHealing].enabled ~= true then
     return
   end
 
-  -- sem comida configurada
   if type(storage.foodItems) ~= "table" or not storage.foodItems[1] then
+    print("[AUTO FOOD] sem foods configuradas")
     return
   end
 
-  -- ainda com buff de food ativo
-  if player:getRegenerationTime() > 400 then return end
+  if lastAutoFoodTry + 1000 > now then
+    return
+  end
+  lastAutoFoodTry = now
 
-  -- procura comida nos containers
-  for _, container in pairs(g_game.getContainers()) do
-    local items = container:getItems()
-    if items then
-      for _, item in ipairs(items) do
-        for _, foodItem in ipairs(storage.foodItems) do
-          if item:getId() == foodItem then
-            g_game.use(item)
-            return
-          end
-        end
-      end
+  local regen = player:getRegenerationTime() or 0
+
+  if regen > 400 then
+    return
+  end
+
+  for _, food in ipairs(storage.foodItems) do
+    local foodId = type(food) == "table" and tonumber(food.id) or tonumber(food)
+    if foodId and foodId > 0 then
+      use(foodId)
+      return
     end
   end
 end)
